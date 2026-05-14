@@ -110,6 +110,7 @@ def build_optimizers(learning_rate):
 
 def calc_l1_loss(p_in, p_out):
 
+    # uncomment if using tanh activation function on last conv layer
     # p_in_scaled = (p_in + 1) / 2
     # p_out_scaled = (p_out + 1) / 2
 
