@@ -27,22 +27,10 @@ def build_models():
 
 def generate_noise_batch(b_size, datasize):
 
-    # bin(random.getrandbits(N))[2:].zfill(N)
-
     return np.random.choice([0, 1], size=(b_size, datasize))
 
 
 def generate_msg_batch(b_size, datasize):
-
-    # s = ''.join(random.choice(string.printable) for _ in range(datasize//8))
-    # a = [bin(ord(c))[2:].zfill(8) for c in s]
-
-    #printable_arr = [bin(ord(c))[2:].zfill(8) for c in string.printable]
-    #printable_arr = [bord(c))[2:].zfill(8) for c in string.printable]
-
-    #arr = np.array([list(bin(ord(c))[2:].zfill(8)) for c in ''.join(random.choice(string.printable) for _ in range(datasize//8))]).astype(int)
-
-    # np.random.choice(list(string.printable), size=(b_size, datasize//8))
 
     str_arr = np.array([''.join(row) for row in np.random.choice(list(string.printable), size=(b_size, datasize//8))])
 
@@ -91,22 +79,16 @@ def training(alice, bob, eve, pbk_gen, pvk_gen):
 
                     pvk_loss = bob_loss
 
+                    # to experiment with later
                     # eve_loss_detached = tf.stop_gradient(eve_loss)
                     # alice_loss = bob_loss + ((eve_loss_detached - 0.5) ** 2)
 
+                    # loss ver for tanh activation function on last conv layer
                     # alice_loss = bob_loss - (1 - (eve_loss ** 2))
 
                     alice_loss = bob_loss + ((eve_loss - 0.5) ** 2)
 
                     pbk_loss = alice_loss
-
-                    # print("\n\nAlice / PBK: ")
-                    # print(alice_loss)
-                    # print("\n\nBob / PVK: ")
-                    # print(bob_loss)
-                    # print("\n\nEve: ")
-                    # print(eve_loss)
-                    # print("\n\n")
 
                     if epoch+batch == 0:
                         alice.summary()
@@ -146,7 +128,6 @@ def training(alice, bob, eve, pbk_gen, pvk_gen):
     plt.title(f"Training loss")
     plt.xlabel("Batches")
     plt.ylabel("Loss")
-    # plt.yticks(np.arange(0, (N * 0.75), 1))
     plt.legend()
     plt.show()
 
@@ -190,6 +171,7 @@ def evaluation(alice, bob, eve, pbk_gen, pvk_gen):
 
                 pvk_loss = bob_loss
 
+                # loss ver for tanh activation function on last conv layer
                 # alice_loss = bob_loss + (1 - (eve_loss ** 2))
 
                 alice_loss = bob_loss + ((eve_loss - 0.5) ** 2)
@@ -210,7 +192,6 @@ def evaluation(alice, bob, eve, pbk_gen, pvk_gen):
     plt.title(f"Evaluation loss")
     plt.xlabel("Batches")
     plt.ylabel("Loss")
-    # plt.yticks(np.arange(0, (N * 0.75), 1))
     plt.legend()
     plt.show()
 
