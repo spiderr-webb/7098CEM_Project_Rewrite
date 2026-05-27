@@ -9,7 +9,7 @@ def define_model_1(input_size):  # for alice, bob, eve, pvk_gen, and attacker 1,
         tf.keras.layers.Conv1D(filters=2, kernel_size=4, strides=1, padding='same', activation='sigmoid'),
         tf.keras.layers.Conv1D(filters=4, kernel_size=2, strides=2, padding='valid', activation='sigmoid'),
         tf.keras.layers.Conv1D(filters=4, kernel_size=1, strides=1, padding='same', activation='sigmoid'),
-        tf.keras.layers.Conv1D(filters=1, kernel_size=1, strides=1, padding='same', activation='sigmoid'),   # changed from tanh
+        tf.keras.layers.Conv1D(filters=1, kernel_size=1, strides=1, padding='same', activation='tanh'),
         tf.keras.layers.Flatten()
     ])
 
@@ -24,7 +24,7 @@ def define_model_2(input_size):  # option 1 for pbk_gen
         tf.keras.layers.Conv1D(filters=2, kernel_size=4, strides=1, padding='same', activation='sigmoid'),
         tf.keras.layers.Conv1D(filters=4, kernel_size=2, strides=1, padding='same', activation='sigmoid'),
         tf.keras.layers.Conv1D(filters=4, kernel_size=1, strides=1, padding='same', activation='sigmoid'),
-        tf.keras.layers.Conv1D(filters=1, kernel_size=1, strides=1, padding='same', activation='sigmoid'),  # changed from tanh
+        tf.keras.layers.Conv1D(filters=1, kernel_size=1, strides=1, padding='same', activation='tanh'),
         tf.keras.layers.Flatten()
     ])
 
@@ -110,8 +110,7 @@ def build_optimizers(learning_rate):
 
 def calc_l1_loss(p_in, p_out):
 
-    # uncomment if using tanh activation function on last conv layer
-    # p_in_scaled = (p_in + 1) / 2
-    # p_out_scaled = (p_out + 1) / 2
+    p_in_scaled = (p_in + 1) / 2
+    p_out_scaled = (p_out + 1) / 2
 
-    return tf.reduce_mean(tf.abs(p_in - p_out))
+    return tf.reduce_mean(tf.abs(p_in_scaled - p_out_scaled))
