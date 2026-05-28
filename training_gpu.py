@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from models import build_models_fixed, build_pbk_meraouche_et_al, build_pbk_layer_param_change, build_optimizers, calc_l1_loss
 
+
 N = 64
 batch_size = 256
 epochs = 200
@@ -18,7 +19,7 @@ loss_threshold = 1e-12
 
 
 alice, bob, eve, pvk_gen = build_models_fixed(N)
-pbk_gen = build_pbk_meraouche_et_al(N) # build_pbk_layer_param_change(N)
+pbk_gen = build_pbk_v3(N)
 
 alice_optimizer, bob_optimizer, eve_optimizer, pbk_optimizer, pvk_optimizer = build_optimizers(learning_rate)
 
@@ -26,16 +27,16 @@ alice_optimizer, bob_optimizer, eve_optimizer, pbk_optimizer, pvk_optimizer = bu
 @tf.function
 def generate_batch():
 
-    dtype = tf.keras.mixed_precision.global_policy().compute_dtype
+  dtype = tf.keras.mixed_precision.global_policy().compute_dtype
 
-    rand_noise = (2 * tf.random.uniform((batch_size, N), minval=0, maxval=2, dtype=tf.int32)) - 1
+  rand_noise = (2 * tf.random.uniform((batch_size, N), minval=0, maxval=2, dtype=tf.int32)) - 1
 
-    plaintext = (2 * tf.random.uniform((batch_size, N), minval=0, maxval=2, dtype=tf.int32)) - 1
+  plaintext = (2 * tf.random.uniform((batch_size, N), minval=0, maxval=2, dtype=tf.int32)) - 1
 
-    rand_noise = tf.cast(rand_noise, dtype)
-    plaintext = tf.cast(plaintext, dtype)
+  rand_noise = tf.cast(rand_noise, dtype)
+  plaintext = tf.cast(plaintext, dtype)
 
-    return rand_noise, plaintext
+  return rand_noise, plaintext
 
 
 @tf.function(jit_compile=True)
@@ -44,6 +45,8 @@ def train_alice_bob():
     rand_noise, plaintext = generate_batch()
 
     with tf.GradientTape(persistent=True) as tape:
+
+        eve.trainable = False
 
         pub_key = pbk_gen(rand_noise)
 
@@ -64,9 +67,9 @@ def train_alice_bob():
 
         pvk_loss = bob_loss
 
-        alice_loss = bob_loss + (1 - (eve_loss ** 2)) # meraouche loss function
+        # alice_loss = bob_loss + (1 - (eve_loss ** 2)) # meraouche loss function
 
-        # alice_loss = bob_loss + (((0.5 - eve_loss) ** 2) / 0.25) # abadi and andersen loss function
+        alice_loss = bob_loss + (((0.5 - eve_loss) ** 2) / 0.25) # abadi and andersen loss function
 
         pbk_loss = alice_loss
 
@@ -82,7 +85,7 @@ def train_alice_bob():
 
     del tape
 
-    return alice_loss, bob_loss, eve_loss
+    return alice_loss, bob_loss, eve_loss # , test1, test2
 
 
 @tf.function(jit_compile=True)
@@ -91,6 +94,8 @@ def train_eve():
     rand_noise, plaintext = generate_batch()
 
     with tf.GradientTape() as tape:
+
+        eve.trainable = True
 
         pub_key = pbk_gen(rand_noise)
 
@@ -123,22 +128,22 @@ def training():
         for epoch in range(epochs):
             for batch in range(steps_per_epoch):
 
-                if (batch % 3 == 0):
+              if (batch % 6 == 0):
+                
+                alice_loss, bob_loss, eve_loss = train_alice_bob()
 
-                    alice_loss, bob_loss, eve_loss = train_alice_bob()
+              else:
 
-                else:
-
-                    eve_loss = train_eve()
+                eve_loss = train_eve()
 
 
-                a = float(alice_loss)
-                b = float(bob_loss)
-                e = float(eve_loss)
+              a = float(alice_loss)
+              b = float(bob_loss)
+              e = float(eve_loss)
 
-                # update progress bar
-                pbar.set_postfix({"alice_loss": alice_loss.numpy(), "bob_loss": bob_loss.numpy(), "eve_loss": eve_loss.numpy()})
-                pbar.update()
+              # update progress bar
+              pbar.set_postfix({"alice_loss": alice_loss.numpy(), "bob_loss": bob_loss.numpy(), "eve_loss": eve_loss.numpy()})
+              pbar.update()
 
             bob_train_loss.append(b)
             eve_train_loss.append(e)
